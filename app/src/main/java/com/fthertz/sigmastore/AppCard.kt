@@ -30,7 +30,7 @@ import androidx.compose.ui.res.painterResource
 fun AppCard(
     app: AppInfo,
     onInstallClick: (String) -> Unit,
-    onScreenshotClick: (Int) -> Unit // теперь передаём индекс
+    onScreenshotClick: (Int) -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -40,53 +40,70 @@ fun AppCard(
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Иконка + Название
+            // Иконка + Название - ТОЛЬКО ServerImage
             Row(verticalAlignment = Alignment.CenterVertically) {
-                AsyncImage(
-                    model = app.icon_url,
-                    contentDescription = app.app_name,
+                ServerImage(
+                    imageName = app.icon_url ?: "",
+                    contentDescription = app.app_name ?: "App Icon",
                     modifier = Modifier
                         .size(64.dp)
                         .clip(RoundedCornerShape(12.dp)),
-                    contentScale = ContentScale.Crop,
-                    error = painterResource(id = R.drawable.rustore_logo)
+                    placeholder = R.drawable.placeholder,
+                    errorImage = R.drawable.rustore_logo
                 )
+
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
-                    Text(app.app_name, style = MaterialTheme.typography.titleLarge)
-                    Text(app.developer, style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        app.app_name ?: "Неизвестное приложение",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    Text(
+                        app.developer ?: "Неизвестный разработчик",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                 }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
             // Описание
-            Text(app.description, style = MaterialTheme.typography.bodyMedium)
+            Text(
+                app.description ?: "Описание отсутствует",
+                style = MaterialTheme.typography.bodyMedium
+            )
             Spacer(modifier = Modifier.height(8.dp))
 
             // Категория + Рейтинг
             Row {
-                Text("Категория: ${app.category}", style = MaterialTheme.typography.bodySmall)
+                Text(
+                    "Категория: ${app.category ?: "Не указана"}",
+                    style = MaterialTheme.typography.bodySmall
+                )
                 Spacer(modifier = Modifier.width(16.dp))
-                Text("Возраст: ${app.age_rating}", style = MaterialTheme.typography.bodySmall)
+                Text(
+                    "Возраст: ${app.age_rating ?: "Не указано"}",
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Свайпер скриншотов
+            // Свайпер скриншотов - ТОЛЬКО ServerImage
             if (app.screenshots.isNotEmpty()) {
                 val pagerState = rememberPagerState(initialPage = 0, pageCount = { app.screenshots.size })
 
                 HorizontalPager(state = pagerState) { page ->
-                    AsyncImage(
-                        model = "file:///android_asset/${app.screenshots[page]}",
+                    ServerImage(
+                        imageName = app.screenshots[page],
                         contentDescription = "Screenshot ${page + 1}",
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(200.dp)
                             .clip(RoundedCornerShape(12.dp))
                             .clickable { onScreenshotClick(page) },
-                        contentScale = ContentScale.Crop
+                        placeholder = R.drawable.placeholder,
+                        errorImage = R.drawable.error_image
                     )
                 }
 
@@ -120,16 +137,14 @@ fun AppCard(
         }
     }
 }
-
 // --- DIALOG ---
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ScreenshotDialog(
-    screenshots: List<String>,
+    screenshots: List<String>, // Имена файлов скриншотов
     startIndex: Int,
     onDismiss: () -> Unit
 ) {
-    val context = LocalContext.current
     val pagerState = rememberPagerState(initialPage = startIndex, pageCount = { screenshots.size })
 
     Dialog(onDismissRequest = onDismiss) {
@@ -139,28 +154,31 @@ fun ScreenshotDialog(
                 .background(Color.Black)
         ) {
             HorizontalPager(state = pagerState) { page ->
-                val bitmap = remember(screenshots[page]) {
-                    try {
-                        val inputStream = context.assets.open(screenshots[page])
-                        BitmapFactory.decodeStream(inputStream)
-                    } catch (e: Exception) {
-                        null
-                    }
-                }
+                ServerImage(
+                    imageName = screenshots[page],
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    placeholder = R.drawable.placeholder,
+                    errorImage = R.drawable.error_image
+                )
+            }
 
-                bitmap?.let {
-                    Image(
-                        bitmap = it.asImageBitmap(),
-                        contentDescription = null,
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
+            // Кнопка закрытия
+            IconButton(
+                onClick = onDismiss,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp)
+            ) {
+                Icon(
+                    painter = painterResource(id = android.R.drawable.ic_menu_close_clear_cancel),
+                    contentDescription = "Закрыть",
+                    tint = Color.White
+                )
             }
         }
     }
 }
-
 // --- SCREEN ---
 @Composable
 fun AppCardScreen(app: AppInfo) {

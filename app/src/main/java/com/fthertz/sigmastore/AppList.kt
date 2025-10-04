@@ -1,9 +1,11 @@
 package com.fthertz.sigmastore
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -27,82 +29,22 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-
-//@Composable
-//fun AppListScreen(parentNavController: NavHostController, apps: List<AppInfo>) {
-//    val categories = listOf("Все") + apps.map { it.category }.distinct()
-//
-//    var selectedTabIndex by remember { mutableStateOf(0) }
-//
-//    Scaffold { padding ->
-//        Column(modifier = Modifier.padding(padding)) {
-//            Text(
-//                text = "Приложения",
-//                style = MaterialTheme.typography.titleLarge,
-//                modifier = Modifier.padding(16.dp)
-//            )
-//
-//            ScrollableTabRow(selectedTabIndex = selectedTabIndex) {
-//                categories.forEachIndexed { index, category ->
-//                    Tab(
-//                        selected = selectedTabIndex == index,
-//                        onClick = { selectedTabIndex = index },
-//                        text = { Text(category) }
-//                    )
-//                }
-//            }
-//
-//            val filteredApps = if (selectedTabIndex == 0) apps
-//            else apps.filter { it.category == categories[selectedTabIndex] }
-//
-//            LazyColumn {
-//                items(filteredApps) { app ->
-//                    AppListItem(app = app, onClick = {
-//                        parentNavController.navigate("detail/${app.id}")
-//                    })
-//                }
-//            }
-//        }
-//    }
-//}
-//
-//@Composable
-//fun AppListItem(app: AppInfo, onClick: () -> Unit) {
-//    Card(
-//        onClick = onClick,
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .padding(8.dp)
-//    ) {
-//        Row(
-//            verticalAlignment = Alignment.CenterVertically,
-//            modifier = Modifier.padding(8.dp)
-//        ) {
-//            Image(
-//                painter = painterResource(app.icon),
-//                contentDescription = app.name,
-//                modifier = Modifier.size(48.dp)
-//            )
-//            Spacer(modifier = Modifier.width(8.dp))
-//            Column {
-//                Text(app.name, fontWeight = FontWeight.Bold)
-//                Text(app.description)
-//                Text("Категория: ${app.category}", style = MaterialTheme.typography.bodySmall)
-//            }
-//        }
-//    }
-//}
-
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
 import coil.compose.AsyncImage
 
 @Composable
 fun AppListScreen(parentNavController: NavHostController, apps: List<AppInfo>) {
-    val categories = listOf("Все") + apps.map { it.category }.distinct()
+    // Добавьте проверку на пустой список
+    if (apps.isEmpty()) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("Нет доступных приложений")
+        }
+        return
+    }
+
+    val categories = listOf("Все") + apps.mapNotNull { it.category }.distinct()
     var selectedTabIndex by remember { mutableStateOf(0) }
 
     Scaffold { padding ->
@@ -118,7 +60,9 @@ fun AppListScreen(parentNavController: NavHostController, apps: List<AppInfo>) {
                     Tab(
                         selected = selectedTabIndex == index,
                         onClick = { selectedTabIndex = index },
-                        text = { Text(category) }
+                        text = {
+                            Text(category ?: "Все")
+                        }
                     )
                 }
             }
@@ -146,21 +90,40 @@ fun AppListItem(app: AppInfo, onClick: () -> Unit) {
             .padding(8.dp)
     ) {
         Row(
-            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(8.dp)
         ) {
-            // Загружаем иконку из assets или URL
-            AsyncImage(
-                model = "file:///android_asset/icons/${app.icon_url}", // пример: "icon.png"
-                contentDescription = app.app_name,
-                modifier = Modifier.size(48.dp)
-            )
+            // Для локальных данных используем painterResource, для серверных - AsyncImage
+            if (app.icon_url?.startsWith("http") == true) {
+                AsyncImage(
+                    model = app.icon_url,
+                    contentDescription = app.app_name ?: "App Icon",
+                    modifier = Modifier.size(48.dp),
+                    placeholder = painterResource(id = R.drawable.placeholder),
+                    error = painterResource(id = R.drawable.rustore_logo)
+                )
+            } else {
+                // Для локальных иконок из ресурсов
+                Image(
+                    painter = painterResource(id = R.drawable.rustore_logo), // fallback
+                    contentDescription = app.app_name ?: "App Icon",
+                    modifier = Modifier.size(48.dp)
+                )
+            }
 
             Spacer(modifier = Modifier.width(8.dp))
             Column {
-                Text(app.app_name, fontWeight = FontWeight.Bold)
-                Text(app.description)
-                Text("Категория: ${app.category}", style = MaterialTheme.typography.bodySmall)
+                Text(
+                    app.app_name ?: "Неизвестное приложение",
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    app.description ?: "Описание отсутствует"
+                )
+                Text(
+                    "Категория: ${app.category ?: "Не указана"}",
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
         }
     }

@@ -60,6 +60,7 @@ fun RuStoreApp(userRepository: UserRepository, apps: List<AppInfo>) {
     NavHost(
         navController = navController,
         startDestination = startDestination
+
     ) {
         // Экран онбординга
         composable("onboarding") {
@@ -78,10 +79,18 @@ fun RuStoreApp(userRepository: UserRepository, apps: List<AppInfo>) {
 
         // Детальная карточка приложения (открывается поверх main)
         composable("detail/{appId}") { backStackEntry ->
-            val id = backStackEntry.arguments?.getString("appId")?.toInt() ?: 0
+            val id = backStackEntry.arguments?.getString("appId")?.toIntOrNull() ?: -1
             val app = apps.firstOrNull { it.id == id }
             if (app != null) {
-                AppCardScreen(app) // заменили AppDetailScreen
+                AppCardScreen(app)
+            } else {
+                // Показываем экран ошибки если приложение не найдено
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Приложение не найдено")
+                }
             }
         }
     }
@@ -123,12 +132,15 @@ fun MainScreen(parentNavController : NavHostController, apps: List<AppInfo>) {
                     )
                 }
             }
-        }
+        },
+        contentWindowInsets = WindowInsets.systemBars // учитываем статусбар и навигацию
     ) { innerPadding ->
         NavHost(
             navController = navController,
             startDestination = Screen.AppList.route,
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier
+                .fillMaxSize() //???
+                .padding(innerPadding)
         ) {
             composable(Screen.AppList.route) { AppListScreen(parentNavController, apps) }
             composable(Screen.NeuralNetwork.route) { SimpleChatScreen() }
@@ -155,7 +167,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         userRepository = UserRepository(this)
-        val apps = AppRepository.loadApps(this)
+
+        // Загружаем данные синхронно из assets (без корутин)
+        val apps = AppRepository.loadAppsFromAssets(this)
 
         setContent {
             ComposeAppTheme {
