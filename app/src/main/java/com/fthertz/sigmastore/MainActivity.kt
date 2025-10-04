@@ -168,7 +168,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         userRepository = UserRepository(this)
 
-        // Загружаем данные синхронно из assets (без корутин)
         val apps = AppRepository.loadAppsFromAssets(this)
 
         setContent {

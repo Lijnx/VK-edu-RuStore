@@ -1,6 +1,5 @@
 package com.fthertz.sigmastore
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,11 +24,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import coil.compose.AsyncImage
 
 @Composable
 fun AppListScreen(parentNavController: NavHostController, apps: List<AppInfo>) {
@@ -93,23 +90,14 @@ fun AppListItem(app: AppInfo, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(8.dp)
         ) {
-            // Для локальных данных используем painterResource, для серверных - AsyncImage
-            if (app.icon_url?.startsWith("http") == true) {
-                AsyncImage(
-                    model = app.icon_url,
-                    contentDescription = app.app_name ?: "App Icon",
-                    modifier = Modifier.size(48.dp),
-                    placeholder = painterResource(id = R.drawable.placeholder),
-                    error = painterResource(id = R.drawable.rustore_logo)
-                )
-            } else {
-                // Для локальных иконок из ресурсов
-                Image(
-                    painter = painterResource(id = R.drawable.rustore_logo), // fallback
-                    contentDescription = app.app_name ?: "App Icon",
-                    modifier = Modifier.size(48.dp)
-                )
-            }
+            // ⚠️ УБЕРИТЕ AsyncImage и используйте ТОЛЬКО ServerImage
+            ServerImage(
+                imageName = app.icon_url ?: "",
+                contentDescription = app.app_name ?: "App Icon",
+                modifier = Modifier.size(48.dp),
+                placeholder = R.drawable.placeholder,
+                errorImage = R.drawable.rustore_logo
+            )
 
             Spacer(modifier = Modifier.width(8.dp))
             Column {
