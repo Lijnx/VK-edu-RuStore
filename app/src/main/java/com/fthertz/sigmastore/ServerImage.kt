@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
 
@@ -13,6 +14,7 @@ fun ServerImage(
     imageName: String,
     contentDescription: String?,
     modifier: Modifier = Modifier,
+    //contentScale: ContentScale = ContentScale.None,
     placeholder: Int? = null,
     errorImage: Int? = null
 ) {
@@ -39,6 +41,7 @@ fun ServerImage(
                 painter = androidx.compose.ui.res.painterResource(placeholder),
                 contentDescription = "Загрузка...",
                 modifier = modifier
+                //contentScale = ContentScale,
             )
         }
         bitmap != null -> {

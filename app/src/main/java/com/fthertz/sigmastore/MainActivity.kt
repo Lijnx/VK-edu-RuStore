@@ -18,6 +18,8 @@ import androidx.navigation.compose.*
 import androidx.navigation.compose.rememberNavController
 import com.fthertz.sigmastore.ui.theme.ComposeAppTheme
 
+const val BASE_URL = "http://10.20.130.246:5000"
+
 // -------- SCREENS --------
 
 @Composable
@@ -144,7 +146,7 @@ fun MainScreen(parentNavController : NavHostController, apps: List<AppInfo>) {
         ) {
             composable(Screen.AppList.route) { AppListScreen(parentNavController, apps) }
             composable(Screen.NeuralNetwork.route) { SimpleChatScreen() }
-            composable(Screen.Search.route) { SearchScreen() }
+            composable(Screen.Search.route) { AppSearchScreen(parentNavController, apps) }
         }
     }
 }

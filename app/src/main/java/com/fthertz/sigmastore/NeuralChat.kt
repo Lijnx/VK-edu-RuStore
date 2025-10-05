@@ -34,19 +34,6 @@ import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 
-// class MainActivity : ComponentActivity() {
-//     override fun onCreate(savedInstanceState: Bundle?) {
-//         super.onCreate(savedInstanceState)
-//         setContent {
-//             MyApplicationTheme {
-//                 Surface(modifier = Modifier.fillMaxSize()) {
-//                     SimpleChatScreen()
-//                 }
-//             }
-//         }
-//     }
-// }
-
 data class Message(
     val message: String
 )
@@ -54,7 +41,6 @@ data class Message(
 @Composable
 fun SimpleChatScreen() {
     // Автоматически используем адрес для эмулятора
-    val baseUrl = "http://10.0.2.2:5000"
 
     var messageText by remember { mutableStateOf("") }
     var chatMessages by remember { mutableStateOf(listOf<Message>()) }
@@ -86,7 +72,7 @@ fun SimpleChatScreen() {
         isLoading = true
 
         val request = Request.Builder()
-            .url("$baseUrl/messages")
+            .url("$BASE_URL/messages")
             .addHeader("Accept", "application/json")
             .build()
 
@@ -129,7 +115,7 @@ fun SimpleChatScreen() {
                 val body = json.toRequestBody("application/json".toMediaType())
 
                 val request = Request.Builder()
-                    .url("$baseUrl/messages")
+                    .url("$BASE_URL/chat")
                     .post(body)
                     .addHeader("Content-Type", "application/json")
                     .build()
@@ -167,7 +153,7 @@ fun SimpleChatScreen() {
         val body = "".toRequestBody("application/json".toMediaType())
 
         val request = Request.Builder()
-            .url("$baseUrl/messages")
+            .url("$BASE_URL/messages")
             .delete(body)  // DELETE с пустым телом
             .build()
 

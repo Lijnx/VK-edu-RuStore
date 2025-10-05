@@ -26,7 +26,6 @@ data class AppInfo(
 )
 
 object AppRepository {
-    private const val BASE_URL = "http://10.209.1.186:8000"
 
     fun loadAppsFromAssets(context: Context): List<AppInfo> {
         return try {

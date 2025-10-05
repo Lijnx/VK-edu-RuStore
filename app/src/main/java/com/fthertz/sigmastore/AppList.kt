@@ -69,49 +69,13 @@ fun AppListScreen(parentNavController: NavHostController, apps: List<AppInfo>) {
 
             LazyColumn {
                 items(filteredApps) { app ->
-                    AppListItem(app = app, onClick = {
-                        parentNavController.navigate("detail/${app.id}")
-                    })
+                    AppSuggestionCard(
+                        app = app,
+                        onClick = {
+                            parentNavController.navigate("detail/${app.id}")
+                        }
+                    )
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun AppListItem(app: AppInfo, onClick: () -> Unit) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(8.dp)
-        ) {
-            // ⚠️ УБЕРИТЕ AsyncImage и используйте ТОЛЬКО ServerImage
-            ServerImage(
-                imageName = app.icon_url ?: "",
-                contentDescription = app.app_name ?: "App Icon",
-                modifier = Modifier.size(48.dp),
-                placeholder = R.drawable.placeholder,
-                errorImage = R.drawable.rustore_logo
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-            Column {
-                Text(
-                    app.app_name ?: "Неизвестное приложение",
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    app.description ?: "Описание отсутствует"
-                )
-                Text(
-                    "Категория: ${app.category ?: "Не указана"}",
-                    style = MaterialTheme.typography.bodySmall
-                )
             }
         }
     }
