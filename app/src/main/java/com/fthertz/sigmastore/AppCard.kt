@@ -12,7 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.GetApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.res.painterResource
@@ -37,8 +38,42 @@ fun AppCard(
     onScreenshotClick: (Int) -> Unit,
     onBackClick: () -> Unit
 ) {
+    val context = LocalContext.current
     var isDownloading by remember { mutableStateOf(false) }
     var downloadProgress by remember { mutableStateOf(0f) }
+    var installError by remember { mutableStateOf<String?>(null) }
+
+    // Запускаем эффект скачивания когда isDownloading становится true
+    if (isDownloading) {
+        DownloadEffect(
+            app = app,
+            context = context,
+            onProgressUpdate = { progress -> downloadProgress = progress },
+            onDownloadComplete = {
+                isDownloading = false
+                downloadProgress = 0f
+            },
+            onError = { error ->
+                installError = error
+                isDownloading = false
+                downloadProgress = 0f
+            }
+        )
+    }
+
+    // Диалог ошибки
+    if (installError != null) {
+        AlertDialog(
+            onDismissRequest = { installError = null },
+            title = { Text("Ошибка установки") },
+            text = { Text(installError!!) },
+            confirmButton = {
+                Button(onClick = { installError = null }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -72,28 +107,45 @@ fun AppCard(
                 )
             )
         },
+        // Couldn't find meta-data for provider with authority com.fthertz.sigmastore.provider
         floatingActionButton = {
-
             if (app.is_real_apk) {
-                StyledDownloadButton(
-                    isDownloading = isDownloading,
-                    downloadProgress = downloadProgress,
-                    onDownloadClick = {
-                        isDownloading = true
-                        // Симуляция прогресса загрузки
-                        LaunchedEffect(Unit) {
-                            for (i in 0..100 step 5) {
-                                downloadProgress = i / 100f
-                                delay(100L)
-                            }
-                            isDownloading = false
-                            downloadProgress = 0f
-                            onInstallClick(app.apk_file)
+                // Упрощенная кнопка установки
+                ExtendedFloatingActionButton(
+                    onClick = {
+                        if (!isDownloading) {
+                            isDownloading = true
                         }
                     },
-                    modifier = Modifier
-                        .padding(bottom = 16.dp)
-                )
+                    modifier = Modifier.padding(bottom = 16.dp, end = 16.dp),
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ) {
+                    if (isDownloading) {
+                        CircularProgressIndicator(
+                            progress = { downloadProgress },
+                            modifier = Modifier.size(20.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            "${(downloadProgress * 100).toInt()}%",
+                            fontWeight = FontWeight.Medium
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.GetApp,
+                            contentDescription = "Скачать",
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            "Установить",
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
             }
         },
         floatingActionButtonPosition = FabPosition.End
@@ -256,7 +308,7 @@ fun AppCard(
 
                         Spacer(modifier = Modifier.height(32.dp))
 
-                        // Свайп скриншотов
+                        // Свайпер скриншотов
                         if (app.screenshots.isNotEmpty()) {
                             Text(
                                 "Скриншоты",
@@ -328,6 +380,7 @@ fun AppCard(
                             }
                         }
 
+                        // Добавляем отступ внизу для FAB
                         Spacer(modifier = Modifier.height(80.dp))
                     }
                 }
@@ -336,51 +389,49 @@ fun AppCard(
     }
 }
 
-// Стилизованная кнопка скачивания
+// Отдельная композабл-функция для обработки скачивания
 @Composable
-fun StyledDownloadButton(
-    isDownloading: Boolean,
-    downloadProgress: Float,
-    onDownloadClick: @Composable () -> Unit,
-    modifier: Modifier = Modifier
+fun DownloadEffect(
+    app: AppInfo,
+    context: android.content.Context,
+    onProgressUpdate: (Float) -> Unit,
+    onDownloadComplete: () -> Unit,
+    onError: (String) -> Unit
 ) {
-    FloatingActionButton(
-        onClick = onDownloadClick as () -> Unit,
-        modifier = modifier
-            .size(70.dp),
-        containerColor = MaterialTheme.colorScheme.primary,
-        contentColor = MaterialTheme.colorScheme.onPrimary
-    ) {
-        if (isDownloading) {
-            // Состояние загрузки
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                // Круговой индикатор прогресса
-                CircularProgressIndicator(
-                    progress = downloadProgress,
-                    modifier = Modifier.size(40.dp),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    strokeWidth = 3.dp
+    LaunchedEffect(key1 = app.id) {
+        try {
+            // Симуляция прогресса скачивания
+            for (i in 0..100 step 2) {
+                onProgressUpdate(i / 100f)
+                delay(50L)
+            }
+
+            // Реальное скачивание и установка
+            // В функции DownloadEffect замените блок установки на:
+            val result = try {
+                ApkInstaller.downloadAndInstallApk(
+                    context = context,
+                    appId = app.id,
+                    appName = app.app_name ?: "app"
                 )
-                // Процент в центре
-                if (downloadProgress > 0f) {
-                    Text(
-                        text = "${(downloadProgress * 100).toInt()}%",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        fontWeight = FontWeight.Bold
-                    )
+            } catch (e: Exception) {
+                // Если основной метод не работает, пробуем альтернативный
+                try {
+                    val apkFile = ApkInstaller.downloadApk(context, app.id, app.app_name ?: "app")
+                    ApkInstaller.installApkWithSystemDialog(context, apkFile)
+                    Result.success(Unit)
+                } catch (e2: Exception) {
+                    Result.failure(e2)
                 }
             }
-        } else {
-            // Обычное состояние
-            Icon(
-                imageVector = Icons.Default.Download,
-                contentDescription = "Скачать приложение",
-                modifier = Modifier.size(30.dp)
-            )
+
+            if (result.isFailure) {
+                onError(result.exceptionOrNull()?.message ?: "Неизвестная ошибка установки")
+            } else {
+                onDownloadComplete()
+            }
+        } catch (e: Exception) {
+            onError(e.message ?: "Ошибка при скачивании")
         }
     }
 }
@@ -459,7 +510,7 @@ fun AppCardScreen(app: AppInfo, onBackClick: () -> Unit) {
         AppCard(
             app = app,
             onInstallClick = { apkUrl ->
-                // DownloadManager для установки
+                // Резервный метод установки
             },
             onScreenshotClick = { index ->
                 fullscreenIndex = index

@@ -1,8 +1,14 @@
 package com.fthertz.sigmastore
 
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
@@ -153,30 +159,56 @@ fun MainScreen(parentNavController : NavHostController, apps: List<AppInfo>) {
     }
 }
 
-
-@Composable
-fun NeuralNetworkScreen() {
-
-}
-
-@Composable
-fun SearchScreen() {
-
-}
-
 // -------- MAIN --------
 class MainActivity : ComponentActivity() {
     private lateinit var userRepository: UserRepository
 
+    // Для обработки результата запроса разрешения
+    private val installPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        // Проверяем разрешение после возврата из настроек
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (packageManager.canRequestPackageInstalls()) {
+                // Разрешение получено
+                Toast.makeText(this, "Разрешение на установку получено", Toast.LENGTH_SHORT).show()
+            } else {
+                // Разрешение не получено
+                Toast.makeText(this, "Для установки приложений необходимо разрешение", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         userRepository = UserRepository(this)
+
+        // Проверить разрешение при запуске (без автоматического запроса)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+            !packageManager.canRequestPackageInstalls()) {
+            // Просто логируем, но не запрашиваем автоматически
+            println("Требуется разрешение на установку из неизвестных источников")
+        }
 
         val apps = AppRepository.loadAppsFromAssets(this)
 
         setContent {
             ComposeAppTheme {
                 RuStoreApp(userRepository, apps)
+            }
+        }
+    }
+
+    // Функция для запроса разрешения (можно вызвать из UI)
+    fun requestInstallPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            try {
+                val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                    data = Uri.parse("package:$packageName")
+                }
+                installPermissionLauncher.launch(intent)
+            } catch (e: Exception) {
+                Toast.makeText(this, "Не удалось открыть настройки разрешений", Toast.LENGTH_SHORT).show()
             }
         }
     }

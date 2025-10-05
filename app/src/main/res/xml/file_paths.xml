@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Путь к внешним файлам приложения -->
+    <external-files-path
+        name="external_files"
+        path="." />
+
+    <!-- Путь к кэшу приложения -->
+    <cache-path
+        name="cache"
+        path="." />
+
+    <!-- Путь к файлам в external storage -->
+    <external-path
+        name="external_storage"
+        path="." />
+
+    <!-- Путь к файлам в downloads -->
+    <external-path
+        name="downloads"
+        path="Download/" />
+</paths>
