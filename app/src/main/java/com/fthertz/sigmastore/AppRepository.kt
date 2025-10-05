@@ -29,7 +29,7 @@ object AppRepository {
 
     fun loadAppsFromAssets(context: Context): List<AppInfo> {
         return try {
-            val json = context.assets.open("database.json").bufferedReader().use { it.readText() }
+            val json = context.assets.open("dataset.json").bufferedReader().use { it.readText() }
             val type = object : TypeToken<List<AppInfo>>() {}.type
             val apps = Gson().fromJson<List<AppInfo>>(json, type) ?: emptyList()
             apps
@@ -43,7 +43,7 @@ object AppRepository {
     // Остальной код остается без изменений
     suspend fun getImage(imageName: String): Bitmap? = withContext(Dispatchers.IO) {
         try {
-            val imageRequest = ImageRequest(name = imageName)
+            val imageRequest = ImageRequest(image_name = "tetris_1.webp")
             val jsonBody =
                 Gson().toJson(imageRequest).toRequestBody("application/json".toMediaType())
 

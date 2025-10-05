@@ -18,8 +18,8 @@ import androidx.navigation.compose.*
 import androidx.navigation.compose.rememberNavController
 import com.fthertz.sigmastore.ui.theme.ComposeAppTheme
 
-const val BASE_URL = "http://10.20.130.246:5000"
-
+const val BASE_URL = "http://10.209.1.186:8000"
+const val ML_URL = "http://10.116.64.20:8000"
 // -------- SCREENS --------
 
 @Composable
@@ -84,9 +84,11 @@ fun RuStoreApp(userRepository: UserRepository, apps: List<AppInfo>) {
             val id = backStackEntry.arguments?.getString("appId")?.toIntOrNull() ?: -1
             val app = apps.firstOrNull { it.id == id }
             if (app != null) {
-                AppCardScreen(app)
+                AppCardScreen(
+                    app = app,
+                    onBackClick = { navController.popBackStack() } // Добавляем навигацию назад
+                )
             } else {
-                // Показываем экран ошибки если приложение не найдено
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center

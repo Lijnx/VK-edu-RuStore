@@ -14,7 +14,6 @@ fun ServerImage(
     imageName: String,
     contentDescription: String?,
     modifier: Modifier = Modifier,
-    //contentScale: ContentScale = ContentScale.None,
     placeholder: Int? = null,
     errorImage: Int? = null
 ) {
@@ -41,7 +40,6 @@ fun ServerImage(
                 painter = androidx.compose.ui.res.painterResource(placeholder),
                 contentDescription = "Загрузка...",
                 modifier = modifier
-                //contentScale = ContentScale,
             )
         }
         bitmap != null -> {

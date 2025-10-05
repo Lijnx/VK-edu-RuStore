@@ -47,9 +47,12 @@ fun AppListScreen(parentNavController: NavHostController, apps: List<AppInfo>) {
     Scaffold { padding ->
         Column(modifier = Modifier.padding(padding)) {
             Text(
-                text = "Приложения",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(16.dp)
+                "Приложения",
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier
+                    .padding(bottom = 16.dp)
+                    .padding(horizontal = 16.dp)
             )
 
             ScrollableTabRow(selectedTabIndex = selectedTabIndex) {

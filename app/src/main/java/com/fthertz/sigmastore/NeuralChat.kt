@@ -72,7 +72,7 @@ fun SimpleChatScreen() {
         isLoading = true
 
         val request = Request.Builder()
-            .url("$BASE_URL/messages")
+            .url("$ML_URL/messages")
             .addHeader("Accept", "application/json")
             .build()
 
@@ -115,7 +115,7 @@ fun SimpleChatScreen() {
                 val body = json.toRequestBody("application/json".toMediaType())
 
                 val request = Request.Builder()
-                    .url("$BASE_URL/chat")
+                    .url("$ML_URL/chat")
                     .post(body)
                     .addHeader("Content-Type", "application/json")
                     .build()
@@ -153,7 +153,7 @@ fun SimpleChatScreen() {
         val body = "".toRequestBody("application/json".toMediaType())
 
         val request = Request.Builder()
-            .url("$BASE_URL/messages")
+            .url("$ML_URL/messages")
             .delete(body)  // DELETE с пустым телом
             .build()
 
