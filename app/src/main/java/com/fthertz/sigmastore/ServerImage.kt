@@ -1,4 +1,3 @@
-// ImageLoader.kt
 package com.fthertz.sigmastore
 
 import android.graphics.Bitmap
@@ -11,7 +10,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun ServerImage(
-    imageName: String,
+    imagePath: String,
     contentDescription: String?,
     modifier: Modifier = Modifier,
     placeholder: Int? = null,
@@ -23,11 +22,11 @@ fun ServerImage(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    LaunchedEffect(imageName) {
+    LaunchedEffect(imagePath) {
         coroutineScope.launch {
             isLoading = true
             error = false
-            bitmap = AppRepository.getImage(imageName)
+            bitmap = AppRepository.getImage(imagePath)
             isLoading = bitmap == null
             error = bitmap == null
         }

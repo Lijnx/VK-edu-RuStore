@@ -86,7 +86,7 @@ fun AppSearchScreen(parentNavController: NavHostController, allApps: List<AppInf
         errorMessage = null
     }
 
-    // Автопоиск при изменении запроса (опционально)
+    // Автопоиск при изменении запроса
     LaunchedEffect(searchQuery) {
         if (searchQuery.length >= 2) {
             searchApps()
@@ -370,14 +370,14 @@ fun AppSuggestionCard(app: AppInfo, onClick: () -> Unit) {
                             .padding(3.dp)
                     ) {
                         ServerImage(
-                            imageName = app.icon_url ?: "",
-                            contentDescription = app.app_name ?: "App Icon", // Добавлен fallback
+                            imagePath = app.icon_url ?: "",
+                            contentDescription = app.app_name ?: "App Icon",
                             modifier = Modifier
                                 .fillMaxSize()
                                 .clip(RoundedCornerShape(16.dp))
                                 .background(MaterialTheme.colorScheme.surface),
                             placeholder = R.drawable.placeholder,
-                            errorImage = R.drawable.rustore_logo
+                            errorImage = R.drawable.error_image
                         )
                     }
                 }
@@ -416,7 +416,7 @@ fun AppSuggestionCard(app: AppInfo, onClick: () -> Unit) {
 
                     // Разработчик
                     Text(
-                        text = app.developer ?: "Неизвестный разработчик", // Добавлен fallback
+                        text = app.developer ?: "Неизвестный разработчик",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
                         fontWeight = FontWeight.Medium,
@@ -428,7 +428,7 @@ fun AppSuggestionCard(app: AppInfo, onClick: () -> Unit) {
 
                     // Описание с ограничением по строкам
                     Text(
-                        text = app.description ?: "Описание отсутствует", // Добавлен fallback
+                        text = app.description ?: "Описание отсутствует",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 2,

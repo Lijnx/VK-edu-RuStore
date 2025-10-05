@@ -40,10 +40,9 @@ object AppRepository {
         }
     }
 
-    // Остальной код остается без изменений
-    suspend fun getImage(imageName: String): Bitmap? = withContext(Dispatchers.IO) {
+    suspend fun getImage(imagePath: String): Bitmap? = withContext(Dispatchers.IO) {
         try {
-            val imageRequest = ImageRequest(image_name = "tetris_1.webp")
+            val imageRequest = ImageRequest(path = imagePath)
             val jsonBody =
                 Gson().toJson(imageRequest).toRequestBody("application/json".toMediaType())
 
@@ -63,7 +62,7 @@ object AppRepository {
                 null
             }
         } catch (e: Exception) {
-            println("Исключение при загрузке $imageName: ${e.message}")
+            println("Исключение при загрузке $imagePath: ${e.message}")
             e.printStackTrace()
             null
         }

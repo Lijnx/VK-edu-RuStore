@@ -18,7 +18,7 @@ import androidx.navigation.compose.*
 import androidx.navigation.compose.rememberNavController
 import com.fthertz.sigmastore.ui.theme.ComposeAppTheme
 
-const val BASE_URL = "http://10.209.1.186:8000"
+const val BASE_URL = "http://10.9.76.78:8000"
 const val ML_URL = "http://10.116.64.20:8000"
 // -------- SCREENS --------
 
@@ -76,7 +76,7 @@ fun RuStoreApp(userRepository: UserRepository, apps: List<AppInfo>) {
 
         // Основная часть с нижней навигацией
         composable("main") {
-            MainScreen(navController, apps) // <-- внутри MainScreen есть свой NavHost
+            MainScreen(navController, apps)
         }
 
         // Детальная карточка приложения (открывается поверх main)
@@ -86,7 +86,7 @@ fun RuStoreApp(userRepository: UserRepository, apps: List<AppInfo>) {
             if (app != null) {
                 AppCardScreen(
                     app = app,
-                    onBackClick = { navController.popBackStack() } // Добавляем навигацию назад
+                    onBackClick = { navController.popBackStack() }
                 )
             } else {
                 Box(
@@ -137,7 +137,7 @@ fun MainScreen(parentNavController : NavHostController, apps: List<AppInfo>) {
                 }
             }
         },
-        contentWindowInsets = WindowInsets.systemBars // учитываем статусбар и навигацию
+        contentWindowInsets = WindowInsets.systemBars
     ) { innerPadding ->
         NavHost(
             navController = navController,

@@ -6,11 +6,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,57 +26,90 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import kotlinx.coroutines.delay
 
 // --- APP CARD ---
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun AppCard(
     app: AppInfo,
     onInstallClick: (String) -> Unit,
     onScreenshotClick: (Int) -> Unit,
-    onBackClick: () -> Unit // Добавляем callback для кнопки назад
+    onBackClick: () -> Unit
 ) {
-    Scaffold { padding ->
+    var isDownloading by remember { mutableStateOf(false) }
+    var downloadProgress by remember { mutableStateOf(0f) }
+
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = app.app_name ?: "Приложение",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                navigationIcon = {
+                    IconButton(
+                        onClick = onBackClick,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Назад",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
+            )
+        },
+        floatingActionButton = {
+
+            if (app.is_real_apk) {
+                StyledDownloadButton(
+                    isDownloading = isDownloading,
+                    downloadProgress = downloadProgress,
+                    onDownloadClick = {
+                        isDownloading = true
+                        // Симуляция прогресса загрузки
+                        LaunchedEffect(Unit) {
+                            for (i in 0..100 step 5) {
+                                downloadProgress = i / 100f
+                                delay(100L)
+                            }
+                            isDownloading = false
+                            downloadProgress = 0f
+                            onInstallClick(app.apk_file)
+                        }
+                    },
+                    modifier = Modifier
+                        .padding(bottom = 16.dp)
+                )
+            }
+        },
+        floatingActionButtonPosition = FabPosition.End
+    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(padding)
+                .verticalScroll(rememberScrollState())
         ) {
-            // Кнопка назад
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = onBackClick,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Назад",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    "Назад",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
             // Основная карточка
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f)
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(16.dp),
                 shape = RoundedCornerShape(24.dp),
                 elevation = CardDefaults.cardElevation(
                     defaultElevation = 8.dp,
@@ -83,7 +118,7 @@ fun AppCard(
             ) {
                 Box(
                     modifier = Modifier
-                        .fillMaxSize()
+                        .fillMaxWidth()
                         .background(
                             brush = Brush.verticalGradient(
                                 colors = listOf(
@@ -95,7 +130,7 @@ fun AppCard(
                 ) {
                     Column(
                         modifier = Modifier
-                            .fillMaxSize()
+                            .fillMaxWidth()
                             .padding(24.dp)
                     ) {
                         // Заголовок с иконкой
@@ -128,7 +163,7 @@ fun AppCard(
                                         .padding(4.dp)
                                 ) {
                                     ServerImage(
-                                        imageName = app.icon_url ?: "",
+                                        imagePath = app.icon_url ?: "",
                                         contentDescription = app.app_name ?: "App Icon",
                                         modifier = Modifier
                                             .fillMaxSize()
@@ -221,7 +256,7 @@ fun AppCard(
 
                         Spacer(modifier = Modifier.height(32.dp))
 
-                        // Свайпер скриншотов
+                        // Свайп скриншотов
                         if (app.screenshots.isNotEmpty()) {
                             Text(
                                 "Скриншоты",
@@ -236,23 +271,20 @@ fun AppCard(
                                 pageCount = { app.screenshots.size }
                             )
 
-                            HorizontalPager(
-                                state = pagerState,
+                            // Контейнер для скриншотов с фиксированной высотой
+                            Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(300.dp) // Увеличиваем высоту скриншотов
-                            ) { page ->
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(horizontal = 8.dp)
-                                        .shadow(
-                                            elevation = 8.dp,
-                                            shape = RoundedCornerShape(16.dp)
-                                        )
-                                ) {
+                                    .height(300.dp)
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                            ) {
+                                HorizontalPager(
+                                    state = pagerState,
+                                    modifier = Modifier.fillMaxSize()
+                                ) { page ->
                                     ServerImage(
-                                        imageName = app.screenshots[page],
+                                        imagePath = app.screenshots[page],
                                         contentDescription = "Screenshot ${page + 1}",
                                         modifier = Modifier
                                             .fillMaxSize()
@@ -262,67 +294,102 @@ fun AppCard(
                                         errorImage = R.drawable.error_image
                                     )
                                 }
-                            }
 
-                            // Индикатор страниц
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Row(
-                                horizontalArrangement = Arrangement.Center,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                repeat(app.screenshots.size) { index ->
-                                    val selected = pagerState.currentPage == index
-                                    Box(
+                                // Индикатор страниц поверх скриншотов
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.BottomCenter)
+                                        .padding(bottom = 16.dp)
+                                ) {
+                                    Row(
+                                        horizontalArrangement = Arrangement.Center,
                                         modifier = Modifier
-                                            .size(if (selected) 12.dp else 8.dp)
-                                            .clip(CircleShape)
-                                            .background(
-                                                if (selected) MaterialTheme.colorScheme.primary
-                                                else MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                                                    alpha = 0.3f
-                                                )
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(Color.Black.copy(alpha = 0.5f))
+                                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                                    ) {
+                                        repeat(app.screenshots.size) { index ->
+                                            val selected = pagerState.currentPage == index
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(if (selected) 8.dp else 6.dp)
+                                                    .clip(CircleShape)
+                                                    .background(
+                                                        if (selected) MaterialTheme.colorScheme.primary
+                                                        else Color.White.copy(alpha = 0.7f)
+                                                    )
                                             )
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
+                                            if (index < app.screenshots.size - 1) {
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(32.dp))
-
-                        // Кнопка установки
-                        if (app.is_real_apk) {
-                            Button(
-                                onClick = { onInstallClick(app.apk_file) },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp),
-                                shape = RoundedCornerShape(16.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary,
-                                    contentColor = MaterialTheme.colorScheme.onPrimary
-                                )
-                            ) {
-                                Text(
-                                    "Установить",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
+                        Spacer(modifier = Modifier.height(80.dp))
                     }
                 }
             }
         }
-//        // Добавляем нижний отступ для системной навигации
-//        Spacer(modifier = Modifier.height(16.dp))
     }
 }
+
+// Стилизованная кнопка скачивания
+@Composable
+fun StyledDownloadButton(
+    isDownloading: Boolean,
+    downloadProgress: Float,
+    onDownloadClick: @Composable () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    FloatingActionButton(
+        onClick = onDownloadClick as () -> Unit,
+        modifier = modifier
+            .size(70.dp),
+        containerColor = MaterialTheme.colorScheme.primary,
+        contentColor = MaterialTheme.colorScheme.onPrimary
+    ) {
+        if (isDownloading) {
+            // Состояние загрузки
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                // Круговой индикатор прогресса
+                CircularProgressIndicator(
+                    progress = downloadProgress,
+                    modifier = Modifier.size(40.dp),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    strokeWidth = 3.dp
+                )
+                // Процент в центре
+                if (downloadProgress > 0f) {
+                    Text(
+                        text = "${(downloadProgress * 100).toInt()}%",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        } else {
+            // Обычное состояние
+            Icon(
+                imageVector = Icons.Default.Download,
+                contentDescription = "Скачать приложение",
+                modifier = Modifier.size(30.dp)
+            )
+        }
+    }
+}
+
 // --- DIALOG ---
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ScreenshotDialog(
-    screenshots: List<String>, // Имена файлов скриншотов
+    screenshots: List<String>,
     startIndex: Int,
     onDismiss: () -> Unit
 ) {
@@ -336,12 +403,33 @@ fun ScreenshotDialog(
         ) {
             HorizontalPager(state = pagerState) { page ->
                 ServerImage(
-                    imageName = screenshots[page],
+                    imagePath = screenshots[page],
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
                     placeholder = R.drawable.placeholder,
                     errorImage = R.drawable.error_image
                 )
+            }
+
+            // Индикатор страниц
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 32.dp)
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color.Black.copy(alpha = 0.5f))
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        text = "${pagerState.currentPage + 1} / ${screenshots.size}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White
+                    )
+                }
             }
 
             // Кнопка закрытия
@@ -354,16 +442,17 @@ fun ScreenshotDialog(
                 Icon(
                     painter = painterResource(id = android.R.drawable.ic_menu_close_clear_cancel),
                     contentDescription = "Закрыть",
-                    tint = Color.White
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }
     }
 }
-// --- SCREEN ---
 
+// --- SCREEN ---
 @Composable
-fun AppCardScreen(app: AppInfo, onBackClick: () -> Unit) { // Добавляем параметр onBackClick
+fun AppCardScreen(app: AppInfo, onBackClick: () -> Unit) {
     var fullscreenIndex by remember { mutableStateOf<Int?>(null) }
 
     Box {
@@ -375,7 +464,7 @@ fun AppCardScreen(app: AppInfo, onBackClick: () -> Unit) { // Добавляем
             onScreenshotClick = { index ->
                 fullscreenIndex = index
             },
-            onBackClick = onBackClick // Передаем callback
+            onBackClick = onBackClick
         )
 
         fullscreenIndex?.let { index ->
